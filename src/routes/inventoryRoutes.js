@@ -4,6 +4,7 @@ const router = express.Router();
 module.exports = (db) => {
     router.inventory = null;
 
+    // Get all products
     router.get('/products', async (req, res) => {
         try {
             const products = await router.inventory.db.all(`SELECT * FROM products`);
@@ -13,6 +14,7 @@ module.exports = (db) => {
         }
     });
 
+    // Add a product
     router.post('/products', async (req, res) => {
         try {
             const { id, name, price, quantity, category, country } = req.body;
@@ -23,6 +25,7 @@ module.exports = (db) => {
         }
     });
 
+    // Edit a product
     router.put('/products/:id', async (req, res) => {
         try {
             const { name, price, quantity, category, country } = req.body;
@@ -33,6 +36,7 @@ module.exports = (db) => {
         }
     });
 
+    // Remove a product
     router.delete('/products/:id', async (req, res) => {
         try {
             await router.inventory.removeProduct(req.params.id);
@@ -42,6 +46,7 @@ module.exports = (db) => {
         }
     });
 
+    // Update product quantity
     router.put('/products/:id/quantity', async (req, res) => {
         try {
             const { quantityChange } = req.body;
@@ -52,6 +57,7 @@ module.exports = (db) => {
         }
     });
 
+    // Search products
     router.get('/products/search', async (req, res) => {
         try {
             const { query } = req.query;
@@ -62,6 +68,7 @@ module.exports = (db) => {
         }
     });
 
+    // Get products by category
     router.get('/products/category/:category', async (req, res) => {
         try {
             const results = await router.inventory.getProductsByCategory(req.params.category);
@@ -71,6 +78,7 @@ module.exports = (db) => {
         }
     });
 
+    // Get total inventory value
     router.get('/total-value', async (req, res) => {
         try {
             const total = await router.inventory.getTotalValue();
@@ -80,6 +88,7 @@ module.exports = (db) => {
         }
     });
 
+    // Export inventory to CSV
     router.get('/export', async (req, res) => {
         try {
             const csv = await router.inventory.exportToCSV();
@@ -91,6 +100,7 @@ module.exports = (db) => {
         }
     });
 
+    // Get transaction history
     router.get('/transactions', async (req, res) => {
         try {
             const transactions = await router.inventory.db.all(`SELECT * FROM transactions`);
