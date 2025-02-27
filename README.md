@@ -103,5 +103,3 @@ Today, I enhanced the Inventory Management System with user authentication and r
 ### Setup Notes
 - Install new dependencies: `npm install`.
 - Create a `.env` file with `SECRET_KEY=your-secure-key-here` (generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`).
-
-Explore the updated code on GitHub: [https://github.com/Joyntilane/inventory-management-system.git](https://github.com/Joyntilane/inventory-management-system.git).
