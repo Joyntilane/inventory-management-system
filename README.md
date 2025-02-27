@@ -88,3 +88,20 @@ A web-based inventory management system built with Node.js, SQLite, and WebSocke
 # Acknowledgements
     Built with assistance from YouTube, StackOverflow...
     Inspired by practical inventory management needs.
+
+## Updates: 27 February 2025
+
+Today, I enhanced the Inventory Management System with user authentication and registration features to secure access and provide role-based dashboards.
+
+### Key Changes
+- **User Authentication:** Implemented JSON Web Tokens (JWT) for secure login, requiring users to authenticate before accessing the system.
+- **Registration Endpoint:** Added a `/api/register` endpoint to allow new users to sign up. Admins must provide company details (name, address, contact) during registration, stored in a new `companies` table linked to `users`.
+- **Role-Based Access:** Admins are redirected to their dashboard (`admin.html`), displaying company details, while regular users see a placeholder (`user.html`).
+- **Environment Variables:** Moved the `SECRET_KEY` for JWT to a `.env` file using `dotenv` for improved security.
+- **Database Fix:** Updated `db.js` to correctly return `lastID` for SQLite `INSERT` operations, fixing a registration bug.
+
+### Setup Notes
+- Install new dependencies: `npm install`.
+- Create a `.env` file with `SECRET_KEY=your-secure-key-here` (generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`).
+
+Explore the updated code on GitHub: [https://github.com/Joyntilane/inventory-management-system.git](https://github.com/Joyntilane/inventory-management-system.git).
