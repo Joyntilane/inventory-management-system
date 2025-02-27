@@ -13,9 +13,12 @@ class Database {
 
     run(sql, params) {
         return new Promise((resolve, reject) => {
-            this.db.run(sql, params, (err) => {
-                if (err) reject(err);
-                else resolve();
+            this.db.run(sql, params, function (err) {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve({ lastID: this.lastID, changes: this.changes });
+                }
             });
         });
     }
