@@ -104,4 +104,18 @@ Today, I enhanced the Inventory Management System with user authentication and r
 - Install new dependencies: `npm install`.
 - Create a `.env` file with `SECRET_KEY=your-secure-key-here` (generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`).
 
-Explore the updated code on GitHub: [https://github.com/Joyntilane/inventory-management-system.git](https://github.com/Joyntilane/inventory-management-system.git).
+## Updates: February 28, 2025
+
+Today, I tweaked the admin side of the Inventory Management System to ensure each admin only sees their own inventories.
+
+### Key Changes
+- **Company-Specific Inventories:** 
+  - // CHANGE: Added `company_id` column to the `products` table to link products to an admin’s company, ensuring isolation.
+- **Filtered Data:** 
+  - // CHANGE: Updated `inventory.js` and `inventoryRoutes.js` to filter products and transactions by the logged-in admin’s `company_id`, restricting visibility.
+- **Database Schema:** 
+  - // CHANGE: Modified `schema.js` to include `company_id` in `products` with a default of 1 for existing data, maintaining compatibility.
+
+### Setup Notes
+- // CHANGE: New admins create their own companies via registration.
+- Test with multiple admin accounts to verify isolation.
