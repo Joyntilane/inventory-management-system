@@ -7,6 +7,7 @@ class Schema {
 
     initialize() {
         this.db.serialize(() => {
+            // CHANGE: Added company_id to products table to link products to admin companies
             this.db.run(`
                 CREATE TABLE IF NOT EXISTS products (
                     id TEXT PRIMARY KEY,
@@ -15,7 +16,9 @@ class Schema {
                     quantity INTEGER NOT NULL,
                     category TEXT NOT NULL,
                     country TEXT NOT NULL DEFAULT 'RSA',
-                    last_updated TEXT NOT NULL
+                    company_id INTEGER NOT NULL,
+                    last_updated TEXT NOT NULL,
+                    FOREIGN KEY (company_id) REFERENCES companies(id)
                 )
             `);
 

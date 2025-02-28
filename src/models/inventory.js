@@ -15,7 +15,8 @@ class InventoryManagement {
         this.broadcastUpdate = broadcastUpdate;
     }
 
-    async addProduct(id, name, price, quantity, category, country) {
+    // CHANGE: Added companyId parameter to associate products with an admin's company
+    async addProduct(id, name, price, quantity, category, country, companyId) {
         const validatedId = validateId(id);
         const validatedName = validateName(name);
         const validatedPrice = validatePrice(price);
@@ -24,17 +25,22 @@ class InventoryManagement {
         const validatedCountry = validateCountry(country);
 
         const lastUpdated = new Date().toISOString();
-        await this.db.run(`
-            INSERT OR REPLACE INTO products (id, name, price, quantity, category, country, last_updated)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        `, [validatedId, validatedName, validatedPrice, validatedQuantity, validatedCategory, validatedCountry, lastUpdated]);
+        // CHANGE: Added company_id to INSERT query
+        await this.db.run(
+            `INSERT OR REPLACE INTO products (id, name, price, quantity, category, country, company_id, last_updated)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [validatedId, validatedName, validatedPrice, validatedQuantity, validatedCategory, validatedCountry, companyId, lastUpdated]
+        );
 
-        await this.logTransaction(validatedId, "ADD", validatedQuantity);
-        this.broadcastUpdate('inventoryUpdate', await this.db.all(`SELECT * FROM products`));
+        // CHANGE: Pass companyId to logTransaction
+        await this.logTransaction(validatedId, "ADD", validatedQuantity, companyId);
+        // CHANGE: Filter broadcast by companyId
+        this.broadcastUpdate('inventoryUpdate', await this.getProductsForCompany(companyId));
         console.log(`Added/Updated: ${validatedName} in ${validatedCategory}, ${validatedCountry}`);
     }
 
-    async editProduct(id, name, price, quantity, category, country) {
+    // CHANGE: Added companyId parameter
+    async editProduct(id, name, price, quantity, category, country, companyId) {
         const validatedId = validateId(id);
         const validatedName = validateName(name);
         const validatedPrice = validatePrice(price);
@@ -42,97 +48,142 @@ class InventoryManagement {
         const validatedCategory = validateCategory(category);
         const validatedCountry = validateCountry(country);
 
-        const product = await this.getProduct(validatedId);
-        if (!product) throw new Error("Product not found");
+        // CHANGE: Pass companyId to getProduct
+        const product = await this.getProduct(validatedId, companyId);
+        if (!product) throw new Error("Product not found or not owned by this company");
 
         const lastUpdated = new Date().toISOString();
-        await this.db.run(`
-            UPDATE products 
-            SET name = ?, price = ?, quantity = ?, category = ?, country = ?, last_updated = ?
-            WHERE id = ?
-        `, [validatedName, validatedPrice, validatedQuantity, validatedCategory, validatedCountry, lastUpdated, validatedId]);
+        // CHANGE: Added company_id to WHERE clause
+        await this.db.run(
+            `UPDATE products 
+             SET name = ?, price = ?, quantity = ?, category = ?, country = ?, last_updated = ?
+             WHERE id = ? AND company_id = ?`,
+            [validatedName, validatedPrice, validatedQuantity, validatedCategory, validatedCountry, lastUpdated, validatedId, companyId]
+        );
 
         const quantityChange = validatedQuantity - product.quantity;
         if (quantityChange !== 0) {
-            await this.logTransaction(validatedId, quantityChange > 0 ? "RESTOCK" : "SALE", Math.abs(quantityChange));
+            // CHANGE: Pass companyId to logTransaction
+            await this.logTransaction(validatedId, quantityChange > 0 ? "RESTOCK" : "SALE", Math.abs(quantityChange), companyId);
         }
-        this.broadcastUpdate('inventoryUpdate', await this.db.all(`SELECT * FROM products`));
+        // CHANGE: Filter broadcast by companyId
+        this.broadcastUpdate('inventoryUpdate', await this.getProductsForCompany(companyId));
         console.log(`Edited: ${validatedName}`);
     }
 
-    async removeProduct(id) {
+    // CHANGE: Added companyId parameter
+    async removeProduct(id, companyId) {
         const validatedId = validateId(id);
-        const product = await this.getProduct(validatedId);
-        if (!product) throw new Error("Product not found");
-        
-        await this.db.run(`DELETE FROM products WHERE id = ?`, [validatedId]);
-        await this.logTransaction(validatedId, "REMOVE", product.quantity);
-        this.broadcastUpdate('inventoryUpdate', await this.db.all(`SELECT * FROM products`));
+        // CHANGE: Pass companyId to getProduct
+        const product = await this.getProduct(validatedId, companyId);
+        if (!product) throw new Error("Product not found or not owned by this company");
+
+        // CHANGE: Added company_id to WHERE clause
+        await this.db.run(`DELETE FROM products WHERE id = ? AND company_id = ?`, [validatedId, companyId]);
+        // CHANGE: Pass companyId to logTransaction
+        await this.logTransaction(validatedId, "REMOVE", product.quantity, companyId);
+        // CHANGE: Filter broadcast by companyId
+        this.broadcastUpdate('inventoryUpdate', await this.getProductsForCompany(companyId));
         console.log(`Removed: ${product.name}`);
     }
 
-    async updateQuantity(id, quantityChange) {
+    // CHANGE: Added companyId parameter
+    async updateQuantity(id, quantityChange, companyId) {
         const validatedId = validateId(id);
         const validatedChange = validateQuantityChange(quantityChange);
-        const product = await this.getProduct(validatedId);
-        if (!product) throw new Error("Product not found");
+        // CHANGE: Pass companyId to getProduct
+        const product = await this.getProduct(validatedId, companyId);
+        if (!product) throw new Error("Product not found or not owned by this company");
 
         const newQuantity = product.quantity + validatedChange;
         if (newQuantity < 0) throw new Error(`Insufficient stock for ${product.name}`);
 
         const lastUpdated = new Date().toISOString();
-        await this.db.run(`
-            UPDATE products 
-            SET quantity = ?, last_updated = ?
-            WHERE id = ?
-        `, [newQuantity, lastUpdated, validatedId]);
+        // CHANGE: Added company_id to WHERE clause
+        await this.db.run(
+            `UPDATE products 
+             SET quantity = ?, last_updated = ?
+             WHERE id = ? AND company_id = ?`,
+            [newQuantity, lastUpdated, validatedId, companyId]
+        );
 
-        await this.logTransaction(validatedId, validatedChange > 0 ? "RESTOCK" : "SALE", Math.abs(validatedChange));
-        this.broadcastUpdate('inventoryUpdate', await this.db.all(`SELECT * FROM products`));
+        // CHANGE: Pass companyId to logTransaction
+        await this.logTransaction(validatedId, validatedChange > 0 ? "RESTOCK" : "SALE", Math.abs(validatedChange), companyId);
+        // CHANGE: Filter broadcast by companyId
+        this.broadcastUpdate('inventoryUpdate', await this.getProductsForCompany(companyId));
         console.log(`Updated ${product.name} quantity to ${newQuantity}`);
     }
 
-    async getProduct(id) {
-        return await this.db.get(`SELECT * FROM products WHERE id = ?`, [validateId(id)]);
+    // CHANGE: Added companyId parameter to filter by company
+    async getProduct(id, companyId) {
+        return await this.db.get(
+            `SELECT * FROM products WHERE id = ? AND company_id = ?`,
+            [validateId(id), companyId]
+        );
     }
 
-    async searchProducts(query) {
+    // CHANGE: New method to get products for a specific company
+    async getProductsForCompany(companyId) {
+        return await this.db.all(`SELECT * FROM products WHERE company_id = ?`, [companyId]);
+    }
+
+    // CHANGE: Added companyId parameter to filter search
+    async searchProducts(query, companyId) {
         query = `%${query.toLowerCase()}%`;
-        return await this.db.all(`
-            SELECT * FROM products 
-            WHERE LOWER(name) LIKE ? OR LOWER(category) LIKE ?
-        `, [query, query]);
+        return await this.db.all(
+            `SELECT * FROM products 
+             WHERE (LOWER(name) LIKE ? OR LOWER(category) LIKE ?) AND company_id = ?`,
+            [query, query, companyId]
+        );
     }
 
-    async getProductsByCategory(category) {
-        return await this.db.all(`
-            SELECT * FROM products 
-            WHERE LOWER(category) = ?
-        `, [validateCategory(category)]);
+    // CHANGE: Added companyId parameter to filter by category
+    async getProductsByCategory(category, companyId) {
+        return await this.db.all(
+            `SELECT * FROM products 
+             WHERE LOWER(category) = ? AND company_id = ?`,
+            [validateCategory(category), companyId]
+        );
     }
 
-    async getTotalValue() {
-        const result = await this.db.get(`
-            SELECT SUM(price * quantity) as total 
-            FROM products
-        `);
+    // CHANGE: Added companyId parameter to filter total value
+    async getTotalValue(companyId) {
+        const result = await this.db.get(
+            `SELECT SUM(price * quantity) as total 
+             FROM products WHERE company_id = ?`,
+            [companyId]
+        );
         return Number((result.total || 0).toFixed(2));
     }
 
-    async logTransaction(productId, type, quantity) {
-        const product = await this.getProduct(productId);
+    // CHANGE: Added companyId parameter to log transactions for a company
+    async logTransaction(productId, type, quantity, companyId) {
+        const product = await this.getProduct(productId, companyId);
         const timestamp = new Date().toISOString();
         const value = product ? (product.price * quantity) : 0;
 
-        await this.db.run(`
-            INSERT INTO transactions (product_id, type, quantity, value, timestamp)
-            VALUES (?, ?, ?, ?, ?)
-        `, [productId, type, quantity, value, timestamp]);
-        this.broadcastUpdate('transactionUpdate', await this.db.all(`SELECT * FROM transactions`));
+        await this.db.run(
+            `INSERT INTO transactions (product_id, type, quantity, value, timestamp)
+             VALUES (?, ?, ?, ?, ?)`,
+            [productId, type, quantity, value, timestamp]
+        );
+        // CHANGE: Filter transactions by companyId
+        this.broadcastUpdate('transactionUpdate', await this.getTransactionsForCompany(companyId));
     }
 
-    async exportToCSV() {
-        const products = await this.db.all(`SELECT * FROM products`);
+    // CHANGE: New method to get transactions for a specific company
+    async getTransactionsForCompany(companyId) {
+        return await this.db.all(
+            `SELECT t.* FROM transactions t
+             JOIN products p ON t.product_id = p.id
+             WHERE p.company_id = ?`,
+            [companyId]
+        );
+    }
+
+    // CHANGE: Added companyId parameter to filter CSV export
+    async exportToCSV(companyId) {
+        const products = await this.getProductsForCompany(companyId);
         let csv = "ID,Name,Price,Quantity,Category,Country,Last Updated,Total Value\n";
         for (const product of products) {
             const totalValue = formatPrice(product.price * product.quantity, product.country);
@@ -141,8 +192,9 @@ class InventoryManagement {
         return csv;
     }
 
-    async displayInventoryReport() {
-        const products = await this.db.all(`SELECT * FROM products`);
+    // CHANGE: Added companyId parameter to filter report
+    async displayInventoryReport(companyId) {
+        const products = await this.getProductsForCompany(companyId);
         const categories = [...new Set(products.map(p => p.category))];
 
         console.log("\n=== Inventory Report ===");
@@ -160,15 +212,16 @@ class InventoryManagement {
         }
         
         console.log("-".repeat(70));
-        console.log(`Total Inventory Value: $${await this.getTotalValue()}`); // Total still in base currency (USD)
+        console.log(`Total Inventory Value: $${await this.getTotalValue(companyId)}`);
         console.log("====================\n");
     }
 
-    async displayTransactionHistory() {
-        const transactions = await this.db.all(`SELECT * FROM transactions`);
+    // CHANGE: Added companyId parameter to filter transaction history
+    async displayTransactionHistory(companyId) {
+        const transactions = await this.getTransactionsForCompany(companyId);
         console.log("\n=== Transaction History ===");
         for (const trans of transactions) {
-            const product = await this.getProduct(trans.product_id);
+            const product = await this.getProduct(trans.product_id, companyId);
             const value = product ? formatPrice(trans.value, product.country) : trans.value;
             console.log(`${new Date(trans.timestamp).toLocaleString()} | ${trans.type.padEnd(7)} | ${(product?.name || "Removed").padEnd(15)} | ${trans.quantity} units | ${value}`);
         }
