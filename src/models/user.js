@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-const SECRET_KEY = process.env.SECRET_KEY || 'Fallback key'; // Fallback key
+const SECRET_KEY = process.env.SECRET_KEY || 'fallback-secret-key'; //fallback key
 
 class User {
     constructor(db) {
@@ -9,16 +9,26 @@ class User {
     }
 
     async createUser(username, password, role = 'user', companyDetails = null) {
+        // CHANGE: Added password strength validation
+        if (!/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(password)) {
+            throw new Error('Password must be 8+ characters with letters, numbers, and symbols');
+        }
         const hashedPassword = await bcrypt.hash(password, 10);
         let companyId = null;
 
         if (role === 'admin' && companyDetails) {
             const { name, address, contact } = companyDetails;
-            const result = await this.db.run(
-                `INSERT INTO companies (name, address, contact) VALUES (?, ?, ?)`,
-                [name, address, contact]
-            );
-            companyId = result.lastID;
+            try {
+                const result = await this.db.run(
+                    `INSERT INTO companies (name, address, contact) VALUES (?, ?, ?)`,
+                    [name, address, contact]
+                );
+                console.log('Insert result:', result);
+                companyId = result.lastID;
+            } catch (error) {
+                console.error('Error inserting company:', error.message);
+                throw error;
+            }
         }
 
         await this.db.run(
