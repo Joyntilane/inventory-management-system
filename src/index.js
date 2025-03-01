@@ -7,12 +7,21 @@ const Schema = require('./database/schema');
 const inventoryRoutes = require('./routes/inventoryRoutes');
 const User = require('./models/user');
 const jwt = require('jsonwebtoken');
+// CHANGE: Added rate limiting dependency
+const rateLimit = require('express-rate-limit');
 
-const SECRET_KEY = process.env.SECRET_KEY || 'Fallback key'; // Fallback key
+const SECRET_KEY = process.env.SECRET_KEY || 'fallback-secret-key'; // fallback key
 
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
+
+// CHANGE: Rate limiting for /api/login (5 attempts per 15 minutes)
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // 5 attempts
+    message: 'Too many login attempts, please try again after 15 minutes'
+});
 
 async function startServer() {
     try {
@@ -22,8 +31,8 @@ async function startServer() {
 
         const userModel = new User(db);
 
-        // Login endpoint
-        app.post('/api/login', async (req, res) => {
+        // CHANGE: Applied loginLimiter to /api/login
+        app.post('/api/login', loginLimiter, async (req, res) => {
             try {
                 const { username, password } = req.body;
                 const { token, role, company } = await userModel.authenticate(username, password);
@@ -33,7 +42,6 @@ async function startServer() {
             }
         });
 
-        // Registration endpoint
         app.post('/api/register', async (req, res) => {
             try {
                 const { username, password, role, companyDetails } = req.body;
@@ -48,7 +56,6 @@ async function startServer() {
             }
         });
 
-        // Middleware to verify JWT
         const authenticateJWT = (req, res, next) => {
             const token = req.headers.authorization?.split(' ')[1];
             if (!token) return res.status(401).json({ error: 'No token provided' });
@@ -61,14 +68,12 @@ async function startServer() {
             }
         };
 
-        // Protect admin routes
         const inventoryRouter = inventoryRoutes(db);
         app.use('/api/admin', authenticateJWT, (req, res, next) => {
             if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
             next();
         }, inventoryRouter);
 
-        // Serve login page as default
         app.get('/', (req, res) => {
             res.sendFile(path.join(__dirname, '../public/login.html'));
         });
