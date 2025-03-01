@@ -1,43 +1,88 @@
+[data-theme="light"] {
+    --background: linear-gradient(135deg, #e0eafc, #cfdef3);
+    --container-bg: rgba(255, 255, 255, 0.1);
+    --text-color: #333;
+    --section-bg: rgba(255, 255, 255, 0.1);
+    --input-bg: #fff;
+    --shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    --border: rgba(255, 255, 255, 0.3);
+    --table-header-bg: rgba(248, 248, 248, 0.8);
+}
+
+[data-theme="dark"] {
+    --background: linear-gradient(135deg, #2c3e50, #1a252f);
+    --container-bg: rgba(50, 50, 50, 0.1);
+    --text-color: #e0e0e0;
+    --section-bg: rgba(50, 50, 50, 0.1);
+    --input-bg: #444;
+    --shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    --border: rgba(100, 100, 100, 0.3);
+    --table-header-bg: rgba(60, 60, 60, 0.8);
+}
+
 body {
     font-family: Arial, sans-serif;
     margin: 0;
-    padding: 20px;
-    background-color: #f4f4f4;
+    padding: 10px;
+    background: var(--background);
+    color: var(--text-color);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 .container {
-    max-width: 1200px;
+    max-width: 100%;
+    width: 90%;
     margin: 0 auto;
+    flex-grow: 1;
+}
+
+.header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
 }
 
 h1 {
     text-align: center;
-    color: #333;
+    color: var(--text-color);
+    font-size: 1.5rem;
 }
 
 section {
-    background: white;
-    padding: 20px;
-    margin: 20px 0;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    background: var(--section-bg);
+    backdrop-filter: blur(10px);
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
 }
 
 h2 {
-    color: #444;
+    color: var(--text-color);
     margin-top: 0;
+    font-size: 1.25rem;
 }
 
 form {
     display: flex;
+    flex-direction: column;
     gap: 10px;
-    flex-wrap: wrap;
 }
 
 input, button, select {
     padding: 8px;
     border: 1px solid #ddd;
-    border-radius: 4px;
+    border-radius: 5px;
+    font-size: 14px;
+    background: var(--input-bg);
+    color: var(--text-color);
+    width: 100%;
+    box-sizing: border-box;
 }
 
 button {
@@ -45,10 +90,13 @@ button {
     color: white;
     cursor: pointer;
     border: none;
+    transition: transform 0.2s, background-color 0.2s;
+    padding: 10px;
 }
 
 button:hover {
     background-color: #0056b3;
+    transform: scale(1.05);
 }
 
 .edit-btn {
@@ -64,31 +112,127 @@ button:hover {
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 15px;
+    margin-top: 10px;
+    font-size: 12px;
 }
 
 th, td {
-    padding: 10px;
+    padding: 8px;
     text-align: left;
     border-bottom: 1px solid #ddd;
+    color: var(--text-color);
 }
 
 th {
-    background-color: #f8f8f8;
+    background-color: var(--table-header-bg);
 }
 
 .pagination {
     margin-top: 10px;
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     justify-content: center;
     align-items: center;
 }
 
 .error {
-    color: red;
+    color: #ff4444;
+    font-size: 12px; /* CHANGE: Smaller font for inline errors */
+    margin-top: 5px; /* CHANGE: Spacing for inline errors */
+    display: block; /* CHANGE: Stack below inputs */
 }
 
 .success {
-    color: green;
+    color: #28a745;
+}
+
+.toggle-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.toggle-btn {
+    background: none;
+    border: none;
+    padding: 10px 15px;
+    font-size: 16px;
+    color: #007bff;
+    cursor: pointer;
+    text-decoration: underline;
+    transition: color 0.2s;
+}
+
+.toggle-btn.active {
+    color: #0056b3;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.toggle-btn:hover {
+    color: #003087;
+}
+
+.form-section {
+    transition: opacity 0.3s ease-in-out;
+}
+
+.form-section[style*="display: none"] {
+    opacity: 0;
+    height: 0;
+    overflow: hidden;
+}
+
+.form-section[style*="display: block"] {
+    opacity: 1;
+}
+
+.theme-btn {
+    background: none;
+    border: 1px solid var(--text-color);
+    padding: 5px 10px;
+    color: var(--text-color);
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.2s;
+    font-size: 14px;
+}
+
+.theme-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+@media (min-width: 576px) {
+    body {
+        padding: 20px;
+    }
+    .container {
+        max-width: 600px;
+    }
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.5rem; }
+    input, button, select { padding: 10px; font-size: 16px; }
+    table { font-size: 14px; }
+    th, td { padding: 10px; }
+    .toggle-btn { font-size: 18px; }
+}
+
+@media (min-width: 768px) {
+    .container { max-width: 800px; }
+    form { flex-direction: row; flex-wrap: wrap; gap: 15px; }
+    input, select { width: calc(33.33% - 10px); }
+    button { width: auto; padding: 10px 20px; }
+    table { font-size: 16px; }
+    th, td { padding: 12px; }
+    .header { flex-wrap: nowrap; }
+}
+
+@media (min-width: 992px) {
+    .container { max-width: 1200px; }
+    input, select { width: calc(25% - 11.25px); }
+    h1 { font-size: 2.5rem; }
+    h2 { font-size: 1.75rem; }
 }

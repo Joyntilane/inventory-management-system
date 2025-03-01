@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,15 +8,18 @@
 </head>
 <body>
     <div class="container">
-        <h1>Admin Dashboard</h1>
+        <div class="header">
+            <h1>Admin Dashboard</h1>
+            <button id="themeToggle" class="theme-btn">Toggle Dark Mode</button>
+            <!-- CHANGE: Added logout button -->
+            <button id="logoutBtn" class="theme-btn">Logout</button>
+        </div>
         <div id="companyInfo">
             <h2>Company Details</h2>
             <p><strong>Name:</strong> <span id="companyName"></span></p>
             <p><strong>Address:</strong> <span id="companyAddress"></span></p>
             <p><strong>Contact:</strong> <span id="companyContact"></span></p>
         </div>
-        <h1>Inventory Management System</h1>
-
         <section>
             <h2>Add Product</h2>
             <form id="addProductForm">
@@ -27,7 +30,6 @@
                 <input type="text" id="category" placeholder="Category" required>
                 <select id="country" required>
                     <option value="" disabled selected>Select Country</option>
-                    <option value="RSA">South Africa (RSA - R)</option>
                     <option value="US">United States (USD - $)</option>
                     <option value="GB">United Kingdom (GBP - £)</option>
                     <option value="EU">Eurozone (EUR - €)</option>
@@ -38,7 +40,6 @@
             </form>
             <div id="addMessage"></div>
         </section>
-
         <section>
             <h2>Edit Product</h2>
             <form id="editProductForm">
@@ -49,7 +50,6 @@
                 <input type="text" id="editCategory" placeholder="Category" required>
                 <select id="editCountry" required>
                     <option value="" disabled>Select Country</option>
-                    <option value="RSA">South Africa (RSA - R)</option>
                     <option value="US">United States (USD - $)</option>
                     <option value="GB">United Kingdom (GBP - £)</option>
                     <option value="EU">Eurozone (EUR - €)</option>
@@ -60,7 +60,6 @@
             </form>
             <div id="editMessage"></div>
         </section>
-
         <section>
             <h2>Update Quantity</h2>
             <form id="updateQuantityForm">
@@ -70,7 +69,6 @@
             </form>
             <div id="updateMessage"></div>
         </section>
-
         <section>
             <h2>Remove Product</h2>
             <form id="removeProductForm">
@@ -79,7 +77,6 @@
             </form>
             <div id="removeMessage"></div>
         </section>
-
         <section>
             <h2>Search Products</h2>
             <input type="text" id="searchQuery" placeholder="Search by name or category">
@@ -98,10 +95,9 @@
                 <tbody></tbody>
             </table>
         </section>
-
         <section>
             <h2>Inventory Report</h2>
-            <div>Total Value: R<span id="totalValue">0</span> (RSA)</div>
+            <div>Total Value: $<span id="totalValue">0</span> (USD)</div>
             <table id="inventoryTable">
                 <thead>
                     <tr>
@@ -123,7 +119,6 @@
                 <button onclick="nextPage('inventory')">Next</button>
             </div>
         </section>
-
         <section>
             <h2>Transaction History</h2>
             <table id="transactionTable">
@@ -144,18 +139,12 @@
                 <button onclick="nextPage('transactions')">Next</button>
             </div>
         </section>
-
         <section>
             <h2>Export</h2>
             <button onclick="exportToCSV()">Download CSV</button>
         </section>
     </div>
     <script src="admin.js"></script>
-    <script>
-        const company = JSON.parse(localStorage.getItem('company') || '{}');
-        document.getElementById('companyName').textContent = company.name || 'N/A';
-        document.getElementById('companyAddress').textContent = company.address || 'N/A';
-        document.getElementById('companyContact').textContent = company.contact || 'N/A';
-    </script>
+    <script src="admin-inline.js"></script>
 </body>
 </html>

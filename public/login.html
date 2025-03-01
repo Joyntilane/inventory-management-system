@@ -1,108 +1,74 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Inventory Management</title>
+    <title>Inventory Management - Access</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>Inventory Management Login</h1>
-        <section>
+        <div class="header">
+            <h1>Inventory Management</h1>
+            <button id="themeToggle" class="theme-btn">Toggle Dark Mode</button>
+        </div>
+        <div class="toggle-buttons" role="tablist">
+            <button id="showLogin" class="toggle-btn active" role="tab" aria-selected="true" aria-controls="loginSection" onclick="toggleForm('login')">Login</button>
+            <button id="showRegister" class="toggle-btn" role="tab" aria-selected="false" aria-controls="registerSection" onclick="toggleForm('register')">Register</button>
+        </div>
+
+        <section id="loginSection" class="form-section" role="tabpanel">
             <h2>Login</h2>
             <form id="loginForm">
-                <input type="text" id="username" placeholder="Username" required>
-                <input type="password" id="password" placeholder="Password" required>
-                <button type="submit">Login</button>
+                <div>
+                    <input type="text" id="username" placeholder="Username" required aria-label="Username">
+                    <!-- CHANGE: Added inline error span -->
+                    <span id="usernameError" class="error"></span>
+                </div>
+                <div>
+                    <input type="password" id="password" placeholder="Password" required aria-label="Password">
+                    <!-- CHANGE: Added inline error span -->
+                    <span id="passwordError" class="error"></span>
+                </div>
+                <button type="submit" class="animate-btn">Login</button>
             </form>
+            <!-- CHANGE: Added loading state -->
+            <div id="loginLoading" style="display: none;">Loading...</div>
             <div id="loginMessage"></div>
         </section>
-        <section>
+
+        <section id="registerSection" class="form-section" role="tabpanel" style="display: none;">
             <h2>Register</h2>
             <form id="registerForm">
-                <input type="text" id="regUsername" placeholder="Username" required>
-                <input type="password" id="regPassword" placeholder="Password" required>
-                <select id="regRole" required>
+                <div>
+                    <input type="text" id="regUsername" placeholder="Username" required aria-label="Registration Username">
+                    <!-- CHANGE: Added inline error span -->
+                    <span id="regUsernameError" class="error"></span>
+                </div>
+                <div>
+                    <input type="password" id="regPassword" placeholder="Password" required aria-label="Registration Password">
+                    <!-- CHANGE: Added inline error span -->
+                    <span id="regPasswordError" class="error"></span>
+                </div>
+                <select id="regRole" required aria-label="User Role">
                     <option value="" disabled selected>Select Role</option>
                     <option value="user">User</option>
                     <option value="admin">Admin</option>
                 </select>
                 <div id="companyDetails" style="display: none;">
-                    <input type="text" id="companyName" placeholder="Company Name">
-                    <input type="text" id="companyAddress" placeholder="Company Address">
-                    <input type="text" id="companyContact" placeholder="Company Contact">
+                    <div>
+                        <input type="text" id="companyName" placeholder="Company Name" aria-label="Company Name">
+                        <!-- CHANGE: Added inline error span -->
+                        <span id="companyNameError" class="error"></span>
+                    </div>
+                    <input type="text" id="companyAddress" placeholder="Company Address" aria-label="Company Address">
+                    <input type="text" id="companyContact" placeholder="Company Contact" aria-label="Company Contact">
                 </div>
-                <button type="submit">Register</button>
+                <button type="submit" class="animate-btn">Register</button>
             </form>
             <div id="registerMessage"></div>
         </section>
     </div>
-    <script>
-        // Login
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-
-            try {
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.error);
-                localStorage.setItem('token', result.token);
-                localStorage.setItem('company', JSON.stringify(result.company));
-                if (result.role === 'admin') {
-                    window.location.href = '/admin.html';
-                } else {
-                    window.location.href = '/user.html';
-                }
-            } catch (error) {
-                document.getElementById('loginMessage').textContent = error.message;
-                document.getElementById('loginMessage').className = 'error';
-            }
-        });
-
-        // Registration
-        document.getElementById('registerForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const username = document.getElementById('regUsername').value;
-            const password = document.getElementById('regPassword').value;
-            const role = document.getElementById('regRole').value;
-            const companyDetails = role === 'admin' ? {
-                name: document.getElementById('companyName').value,
-                address: document.getElementById('companyAddress').value,
-                contact: document.getElementById('companyContact').value
-            } : null;
-
-            try {
-                const response = await fetch('/api/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password, role, companyDetails })
-                });
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.error);
-                document.getElementById('registerMessage').textContent = result.message;
-                document.getElementById('registerMessage').className = 'success';
-            } catch (error) {
-                document.getElementById('registerMessage').textContent = error.message;
-                document.getElementById('registerMessage').className = 'error';
-            }
-        });
-
-        // Show/hide company details based on role
-        document.getElementById('regRole').addEventListener('change', (e) => {
-            document.getElementById('companyDetails').style.display = e.target.value === 'admin' ? 'block' : 'none';
-            if (e.target.value === 'admin') {
-                document.getElementById('companyName').setAttribute('required', 'true');
-            } else {
-                document.getElementById('companyName').removeAttribute('required');
-            }
-        });
-    </script>
+    <script src="login.js"></script>
 </body>
 </html>
