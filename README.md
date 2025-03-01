@@ -119,3 +119,27 @@ Today, I tweaked the admin side of the Inventory Management System to ensure eac
 ### Setup Notes
 - // CHANGE: New admins create their own companies via registration.
 - Test with multiple admin accounts to verify isolation.
+
+## Updates: 1 March 2025
+
+Today, I focused on front-end improvements, security, UX, and code quality.
+
+### Key Changes
+- **Single Access Page:** 
+  - // CHANGE: Merged login/registration into `login.html` with toggle buttons.
+- **Dark-Light Mode:** 
+  - // CHANGE: Implemented toggleable themes across all pages with CSS variables and `localStorage`.
+- **Responsiveness:** 
+  - // CHANGE: Updated `style.css` with mobile-first design, fluid layouts, and media queries.
+- **UX Enhancements:** 
+  - // CHANGE: Added logout button to `admin.html`, loading state to `login.html`, extracted JS to `login.js`, and inline form validation feedback.
+- **Security Enhancements:** 
+  - // CHANGE: Added password strength validation (8+ chars, letters, numbers, symbols) in `user.js`.
+  - // CHANGE: Implemented rate limiting on `/api/login` (5 attempts/15 min) with `express-rate-limit`.
+- **Code Quality:** 
+  - // CHANGE: Extracted inline JS from `admin.html` to `admin-inline.js`.
+- **UI Trends:** 
+  - // CHANGE: Applied glassmorphism, microinteractions, and responsive design.
+
+### Setup Notes
+- // CHANGE: Install dependencies: `npm install`.Run `npm run dev` and access at `http://localhost:3000`. Test responsiveness, authentication, and code style.
