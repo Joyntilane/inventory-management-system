@@ -4,6 +4,21 @@ const router = express.Router();
 module.exports = (db) => {
     router.inventory = null;
 
+    // CHANGE: New endpoint for users to fetch all products
+    router.get('/all-products', async (req, res) => {
+        try {
+            const products = await router.inventory.getAllProductsForUsers();
+            // Add short descriptions (simulated here; in reality, add to products table)
+            const productsWithDescriptions = products.map(p => ({
+                ...p,
+                shortDescription: `A ${p.category} product from ${p.country} - ${p.name} is ideal for inventory tracking.`
+            }));
+            res.json(productsWithDescriptions);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
     router.get('/products', async (req, res) => {
         try {
             // CHANGE: Filter products by req.user.companyId

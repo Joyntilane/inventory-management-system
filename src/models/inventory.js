@@ -71,6 +71,10 @@ class InventoryManagement {
         console.log(`Edited: ${validatedName}`);
     }
 
+    async getAllProductsForUsers() {
+        return await this.db.all(`SELECT * FROM products`);
+    }
+
     // CHANGE: Added companyId parameter
     async removeProduct(id, companyId) {
         const validatedId = validateId(id);

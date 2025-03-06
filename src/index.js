@@ -74,6 +74,8 @@ async function startServer() {
             next();
         }, inventoryRouter);
 
+        app.use('/api/user', authenticateJWT, inventoryRouter);
+
         app.get('/', (req, res) => {
             res.sendFile(path.join(__dirname, '../public/login.html'));
         });
