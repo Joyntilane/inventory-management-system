@@ -17,54 +17,64 @@
             <button id="showRegister" class="toggle-btn" role="tab" aria-selected="false" aria-controls="registerSection" onclick="toggleForm('register')">Register</button>
         </div>
 
-        <section id="loginSection" class="form-section" role="tabpanel">
+        <!-- Login Form -->
+        <section id="loginSection" class="form-section auth-form" role="tabpanel">
             <h2>Login</h2>
+            <p class="welcome-text">Welcome Back! Please enter your details</p>
             <form id="loginForm">
-                <div>
-                    <input type="text" id="username" placeholder="Username" required aria-label="Username">
-                    <!-- CHANGE: Added inline error span -->
+                <div class="form-group">
+                    <input type="text" id="username" placeholder="Enter username" required aria-label="Username">
                     <span id="usernameError" class="error"></span>
                 </div>
-                <div>
-                    <input type="password" id="password" placeholder="Password" required aria-label="Password">
-                    <!-- CHANGE: Added inline error span -->
+                <div class="form-group">
+                    <input type="password" id="password" placeholder="Enter password" required aria-label="Password">
                     <span id="passwordError" class="error"></span>
                 </div>
-                <button type="submit" class="animate-btn">Login</button>
+                <button type="submit" class="animate-btn primary-btn">Log In with Username and Password</button>
+                <div class="alt-option">OR</div>
+                <button type="button" class="animate-btn secondary-btn">Log In with Google</button>
+                <p class="auth-link">Don’t have an account? <a href="#" onclick="toggleForm('register')">Sign Up</a></p>
             </form>
-            <!-- CHANGE: Added loading state -->
             <div id="loginLoading" style="display: none;">Loading...</div>
             <div id="loginMessage"></div>
         </section>
 
-        <section id="registerSection" class="form-section" role="tabpanel" style="display: none;">
-            <h2>Register</h2>
+        <!-- Registration Form -->
+        <section id="registerSection" class="form-section auth-form" role="tabpanel" style="display: none;">
+            <h2>Sign Up</h2>
+            <p class="welcome-text">Welcome! Please enter your information below to begin</p>
             <form id="registerForm">
-                <div>
-                    <input type="text" id="regUsername" placeholder="Username" required aria-label="Registration Username">
-                    <!-- CHANGE: Added inline error span -->
+                <div class="form-group">
+                    <input type="text" id="regUsername" placeholder="Enter username" required aria-label="Registration Username">
                     <span id="regUsernameError" class="error"></span>
                 </div>
-                <div>
-                    <input type="password" id="regPassword" placeholder="Password" required aria-label="Registration Password">
-                    <!-- CHANGE: Added inline error span -->
+                <div class="form-group">
+                    <input type="password" id="regPassword" placeholder="Enter password" required aria-label="Registration Password">
                     <span id="regPasswordError" class="error"></span>
                 </div>
-                <select id="regRole" required aria-label="User Role">
-                    <option value="" disabled selected>Select Role</option>
-                    <option value="user">User</option>
-                    <option value="admin">Admin</option>
-                </select>
+                <div class="form-group">
+                    <select id="regRole" required aria-label="User Role">
+                        <option value="" disabled selected>Select Role</option>
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
                 <div id="companyDetails" style="display: none;">
-                    <div>
-                        <input type="text" id="companyName" placeholder="Company Name" aria-label="Company Name">
-                        <!-- CHANGE: Added inline error span -->
+                    <div class="form-group">
+                        <input type="text" id="companyName" placeholder="Enter company name" aria-label="Company Name">
                         <span id="companyNameError" class="error"></span>
                     </div>
-                    <input type="text" id="companyAddress" placeholder="Company Address" aria-label="Company Address">
-                    <input type="text" id="companyContact" placeholder="Company Contact" aria-label="Company Contact">
+                    <div class="form-group">
+                        <input type="text" id="companyAddress" placeholder="Enter company address" aria-label="Company Address">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="companyContact" placeholder="Enter company contact" aria-label="Company Contact">
+                    </div>
                 </div>
-                <button type="submit" class="animate-btn">Register</button>
+                <button type="submit" class="animate-btn primary-btn">Sign Up with Username and Password</button>
+                <div class="alt-option">OR</div>
+                <button type="button" class="animate-btn secondary-btn">Sign Up with Google</button>
+                <p class="auth-link">Already have an account? <a href="#" onclick="toggleForm('login')">Log In</a></p>
             </form>
             <div id="registerMessage"></div>
         </section>

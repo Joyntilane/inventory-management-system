@@ -33,7 +33,7 @@ body {
 
 .container {
     max-width: 100%;
-    width: 90%;
+    width: 100%;
     margin: 0 auto;
     flex-grow: 1;
 }
@@ -71,7 +71,8 @@ h2 {
 form {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 15px;
+    align-items: center;
 }
 
 input, button, select {
@@ -81,7 +82,8 @@ input, button, select {
     font-size: 14px;
     background: var(--input-bg);
     color: var(--text-color);
-    width: 100%;
+    width: 100%; /* CHANGE: Ensure all fields and buttons have equal width (100% of form-group) */
+    max-width: 300px; /* CHANGE: Consistent max-width for all elements */
     box-sizing: border-box;
 }
 
@@ -92,6 +94,8 @@ button {
     border: none;
     transition: transform 0.2s, background-color 0.2s;
     padding: 10px;
+    width: 100%; /* CHANGE: Full width, matching inputs */
+    max-width: 300px; /* CHANGE: Consistent max-width */
 }
 
 button:hover {
@@ -138,9 +142,9 @@ th {
 
 .error {
     color: #ff4444;
-    font-size: 12px; /* CHANGE: Smaller font for inline errors */
-    margin-top: 5px; /* CHANGE: Spacing for inline errors */
-    display: block; /* CHANGE: Stack below inputs */
+    font-size: 12px;
+    margin-top: 5px;
+    display: block;
 }
 
 .success {
@@ -205,13 +209,106 @@ th {
     background-color: rgba(255, 255, 255, 0.1);
 }
 
+.auth-form {
+    text-align: center;
+}
+
+.welcome-text {
+    font-size: 16px;
+    color: var(--text-color);
+    margin-bottom: 20px;
+}
+
+.alt-option {
+    text-align: center;
+    color: var(--text-color);
+    margin: 10px 0;
+}
+
+.primary-btn {
+    background-color: #000;
+    color: white;
+    font-weight: bold;
+    width: 100%; /* CHANGE: Full width, matching inputs */
+    max-width: 300px; /* CHANGE: Consistent max-width */
+}
+
+.secondary-btn {
+    background-color: white;
+    color: #000;
+    border: 1px solid #ddd;
+    width: 100%; /* CHANGE: Full width, matching inputs */
+    max-width: 300px; /* CHANGE: Consistent max-width */
+}
+
+.auth-link {
+    font-size: 14px;
+    color: #007bff;
+    text-align: center;
+    margin-top: 15px;
+}
+
+.auth-link a {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+/* CHANGE: Add styles for user dashboard and products */
+.products-section {
+    margin-top: 20px;
+    padding: 15px;
+    background: var(--section-bg);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+}
+
+.products-grid {
+    display: grid;
+    gap: 15px;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Responsive grid for products */
+    padding: 10px;
+}
+
+.product-card {
+    background: var(--container-bg);
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border);
+    text-align: center;
+}
+
+.product-card h3 {
+    color: var(--text-color);
+    font-size: 1.1rem;
+    margin: 0 0 10px;
+}
+
+.product-card .price {
+    color: #28a745; /* Green for price, similar to success */
+    font-weight: bold;
+    margin: 5px 0;
+}
+
+.product-card .description {
+    color: var(--text-color);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* Responsive Media Queries unchanged */
 @media (min-width: 576px) {
-    body {
-        padding: 20px;
-    }
-    .container {
-        max-width: 600px;
-    }
+    body { padding: 20px; }
+    .container { max-width: 600px; }
     h1 { font-size: 2rem; }
     h2 { font-size: 1.5rem; }
     input, button, select { padding: 10px; font-size: 16px; }
@@ -222,9 +319,6 @@ th {
 
 @media (min-width: 768px) {
     .container { max-width: 800px; }
-    form { flex-direction: row; flex-wrap: wrap; gap: 15px; }
-    input, select { width: calc(33.33% - 10px); }
-    button { width: auto; padding: 10px 20px; }
     table { font-size: 16px; }
     th, td { padding: 12px; }
     .header { flex-wrap: nowrap; }
@@ -232,7 +326,6 @@ th {
 
 @media (min-width: 992px) {
     .container { max-width: 1200px; }
-    input, select { width: calc(25% - 11.25px); }
     h1 { font-size: 2.5rem; }
     h2 { font-size: 1.75rem; }
 }
