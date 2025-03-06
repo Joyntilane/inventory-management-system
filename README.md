@@ -143,3 +143,22 @@ Today, I focused on front-end improvements, security, UX, and code quality.
 
 ### Setup Notes
 - // CHANGE: Install dependencies: `npm install`.Run `npm run dev` and access at `http://localhost:3000`. Test responsiveness, authentication, and code style.
+
+## Updates: 6 March 2025
+
+### Key Changes
+- **User Dashboard:** 
+  - // CHANGE: Created `user.html` and `user.js` to display all products added by admins, showing price, name, and a short description in a responsive grid layout.
+  - // CHANGE: Added `/api/user/all-products` endpoint in `inventoryRoutes.js` and `getAllProductsForUsers` method in `inventory.js` to fetch products for users.
+  - // CHANGE: Updated `style.css` to include product card styling and responsive grid for the user dashboard.
+
+## Testing
+- Run `npm run dev`.
+
+- Log in as a user.
+
+- Navigate to `user.html` and verify:
+
+    >Products are fetched and displayed in the .products-grid.
+
+- Add products via `admin.html` and confirm they appear on the user dashboard.
