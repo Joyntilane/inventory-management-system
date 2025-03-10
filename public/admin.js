@@ -1,279 +1,234 @@
-const ITEMS_PER_PAGE = 5;
-let inventoryPage = 1;
-let transactionsPage = 1;
-let inventoryData = [];
-let transactionsData = [];
-
 const token = localStorage.getItem('token');
-const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+if (!token) {
+    console.log('No token found, redirecting to login');
+    window.location.href = '/';
+}
 
-const ws = new WebSocket(`ws://${window.location.host}`);
+const toggleBtn = document.getElementById('themeToggle');
+const logoutBtn = document.getElementById('logoutBtn');
+const html = document.documentElement;
 
-ws.onopen = () => console.log('WebSocket connected');
-ws.onmessage = (event) => {
-    const { type, data } = JSON.parse(event.data);
-    if (type === 'inventoryUpdate') {
-        inventoryData = data;
-        updateInventoryTable();
-    } else if (type === 'transactionUpdate') {
-        transactionsData = data;
-        updateTransactionTable();
-    }
-};
-ws.onclose = () => console.log('WebSocket disconnected');
+const savedTheme = localStorage.getItem('theme') || 'light';
+html.setAttribute('data-theme', savedTheme);
+toggleBtn.textContent = savedTheme === 'light' ? 'Toggle Dark Mode' : 'Toggle Light Mode';
 
-// Add Product
-document.getElementById('addProductForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const formData = {
-        id: document.getElementById('id').value,
-        name: document.getElementById('name').value,
-        price: parseFloat(document.getElementById('price').value),
-        quantity: parseInt(document.getElementById('quantity').value),
-        category: document.getElementById('category').value,
-        country: document.getElementById('country').value
-    };
+toggleBtn.addEventListener('click', () => {
+    const currentTheme = html.getAttribute('data-theme');
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    html.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    toggleBtn.textContent = newTheme === 'light' ? 'Toggle Dark Mode' : 'Toggle Light Mode';
+});
 
+logoutBtn.addEventListener('click', () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('company');
+    window.location.href = '/';
+});
+
+function displayError(elementId, message) {
+    document.getElementById(`${elementId}Error`).textContent = message;
+}
+
+function clearErrors() {
+    document.querySelectorAll('.error').forEach(error => error.textContent = '');
+}
+
+async function fetchInventory() {
     try {
         const response = await fetch('/api/admin/products', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) throw new Error((await response.json()).error || 'Failed to fetch inventory');
+        const products = await response.json();
+        updateProductTable(products);
+    } catch (error) {
+        console.error('Error fetching inventory:', error.message);
+        alert(`Error: ${error.message}`);
+    }
+}
+
+function updateProductTable(products) {
+    const tbody = document.querySelector('#inventoryTable tbody');
+    tbody.innerHTML = products.map(product => `
+        <tr>
+            <td>${product.name}</td>
+            <td>${product.price.toFixed(2)}</td>
+            <td>${product.quantity}</td>
+            <td>${product.category}</td>
+            <td>${product.country}</td>
+            <td>
+                <button class="animate-btn secondary-btn" onclick="updateQuantity(${product.id}, 'add')">Add</button>
+                <button class="animate-btn secondary-btn" onclick="updateQuantity(${product.id}, 'remove')">Remove</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+async function fetchFeedbackReports() {
+    try {
+        const response = await fetch('/api/admin/feedback', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) throw new Error((await response.json()).error || 'Failed to fetch feedback');
+        const feedback = await response.json();
+        const feedbackReports = document.getElementById('feedbackReports');
+        feedbackReports.innerHTML = `
+            <table>
+                <thead>
+                    <tr><th>Product</th><th>User</th><th>Rating</th><th>Comment</th><th>Timestamp</th></tr>
+                </thead>
+                <tbody>
+                    ${feedback.map(f => `
+                        <tr>
+                            <td>${f.product_name}</td>
+                            <td>${f.username}</td>
+                            <td>${f.rating}</td>
+                            <td>${f.comment || 'N/A'}</td>
+                            <td>${new Date(f.timestamp).toLocaleString()}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    } catch (error) {
+        console.error('Error fetching feedback reports:', error.message);
+        document.getElementById('feedbackReports').innerHTML = `<p class="error">Error loading feedback: ${error.message}</p>`;
+    }
+}
+
+async function fetchReviewAnalytics() {
+    try {
+        const response = await fetch('/api/admin/analytics', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) throw new Error((await response.json()).error || 'Failed to fetch analytics');
+        const analytics = await response.json();
+        const reviewAnalytics = document.getElementById('reviewAnalytics');
+        reviewAnalytics.innerHTML = `
+            <h3>Product Averages</h3>
+            <table>
+                <thead>
+                    <tr><th>Product</th><th>Average Rating</th><th>Feedback Count</th></tr>
+                </thead>
+                <tbody>
+                    ${analytics.productAverages.map(p => `
+                        <tr>
+                            <td>${p.name}</td>
+                            <td>${p.average_rating.toFixed(1)}</td>
+                            <td>${p.feedback_count}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            <h3>Rating Distribution</h3>
+            <table>
+                <thead>
+                    <tr><th>Rating</th><th>Count</th></tr>
+                </thead>
+                <tbody>
+                    ${analytics.ratingDistribution.map(r => `
+                        <tr>
+                            <td>${r.rating}</td>
+                            <td>${r.count}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            <h3>Feedback Trends by Month</h3>
+            <table>
+                <thead>
+                    <tr><th>Month</th><th>Feedback Count</th></tr>
+                </thead>
+                <tbody>
+                    ${analytics.feedbackTrends.map(t => `
+                        <tr>
+                            <td>${t.month}</td>
+                            <td>${t.feedback_count}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    } catch (error) {
+        console.error('Error fetching review analytics:', error.message);
+        document.getElementById('reviewAnalytics').innerHTML = `<p class="error">Error loading analytics: ${error.message}</p>`;
+    }
+}
+
+async function updateQuantity(productId, type) {
+    const quantityChange = parseInt(prompt(`Enter quantity to ${type}:`), 10);
+    if (isNaN(quantityChange) || quantityChange <= 0) {
+        alert('Please enter a valid quantity');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/admin/update-quantity/${productId}`, {
             method: 'POST',
-            headers,
-            body: JSON.stringify(formData)
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ quantityChange, type })
         });
-        const result = await response.json();
-        document.getElementById('addMessage').textContent = response.ok ? result.message : result.error;
-        document.getElementById('addMessage').className = response.ok ? 'success' : 'error';
+        if (!response.ok) throw new Error((await response.json()).error || 'Failed to update quantity');
+        fetchInventory();
     } catch (error) {
-        document.getElementById('addMessage').textContent = error.message;
-        document.getElementById('addMessage').className = 'error';
+        alert(`Error: ${error.message}`);
     }
-});
+}
 
-// Edit Product
-document.getElementById('editProductForm').addEventListener('submit', async (e) => {
+document.getElementById('productForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const formData = {
-        name: document.getElementById('editName').value,
-        price: parseFloat(document.getElementById('editPrice').value),
-        quantity: parseInt(document.getElementById('editQuantity').value),
-        category: document.getElementById('editCategory').value,
-        country: document.getElementById('editCountry').value
-    };
+    const name = document.getElementById('productName').value;
+    const price = parseFloat(document.getElementById('productPrice').value);
+    const quantity = parseInt(document.getElementById('productQuantity').value, 10);
+    const category = document.getElementById('productCategory').value;
+    const country = document.getElementById('productCountry').value;
+    const shortDescription = document.getElementById('productDescription').value || '';
+    const photoInput = document.getElementById('productPhoto');
+    const photo = photoInput.files[0];
+
+    clearErrors();
 
     try {
-        const id = document.getElementById('editId').value;
-        const response = await fetch(`/api/admin/products/${id}`, {
-            method: 'PUT',
-            headers,
-            body: JSON.stringify(formData)
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('price', price);
+        formData.append('quantity', quantity);
+        formData.append('category', category);
+        formData.append('country', country);
+        formData.append('shortDescription', shortDescription);
+        if (photo) {
+            formData.append('photo', photo);
+        }
+
+        const response = await fetch('/api/admin/products', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
         });
-        const result = await response.json();
-        document.getElementById('editMessage').textContent = response.ok ? result.message : result.error;
-        document.getElementById('editMessage').className = response.ok ? 'success' : 'error';
+        if (!response.ok) throw new Error((await response.json()).error || 'Failed to add product');
+        const product = await response.json();
+        updateProductTable([product, ...document.querySelectorAll('#inventoryTable tbody tr').map(tr => ({
+            id: tr.cells[5].children[0].getAttribute('onclick').match(/\d+/)[0],
+            name: tr.cells[0].textContent,
+            price: parseFloat(tr.cells[1].textContent),
+            quantity: parseInt(tr.cells[2].textContent),
+            category: tr.cells[3].textContent,
+            country: tr.cells[4].textContent
+        }))]);
+        document.getElementById('productForm').reset();
     } catch (error) {
-        document.getElementById('editMessage').textContent = error.message;
-        document.getElementById('editMessage').className = 'error';
+        displayError('productForm', error.message);
     }
 });
 
-// Update Quantity
-document.getElementById('updateQuantityForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const id = document.getElementById('updateId').value;
-    const quantityChange = parseInt(document.getElementById('quantityChange').value);
-
-    try {
-        const response = await fetch(`/api/admin/products/${id}/quantity`, {
-            method: 'PUT',
-            headers,
-            body: JSON.stringify({ quantityChange })
-        });
-        const result = await response.json();
-        document.getElementById('updateMessage').textContent = response.ok ? result.message : result.error;
-        document.getElementById('updateMessage').className = response.ok ? 'success' : 'error';
-    } catch (error) {
-        document.getElementById('updateMessage').textContent = error.message;
-        document.getElementById('updateMessage').className = 'error';
-    }
+document.addEventListener('DOMContentLoaded', () => {
+    fetchInventory();
+    fetchFeedbackReports();
+    fetchReviewAnalytics();
 });
-
-// Remove Product
-document.getElementById('removeProductForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const id = document.getElementById('removeId').value;
-
-    try {
-        const response = await fetch(`/api/admin/products/${id}`, {
-            method: 'DELETE',
-            headers
-        });
-        const result = await response.json();
-        document.getElementById('removeMessage').textContent = response.ok ? result.message : result.error;
-        document.getElementById('removeMessage').className = response.ok ? 'success' : 'error';
-    } catch (error) {
-        document.getElementById('removeMessage').textContent = error.message;
-        document.getElementById('removeMessage').className = 'error';
-    }
-});
-
-// Search Products
-async function searchProducts() {
-    const query = document.getElementById('searchQuery').value;
-    try {
-        const response = await fetch(`/api/admin/products/search?query=${encodeURIComponent(query)}`, {headers});
-        const results = await response.json();
-        const tbody = document.getElementById('searchResults').querySelector('tbody');
-        tbody.innerHTML = '';
-        results.forEach(p => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${p.id}</td>
-                <td>${p.name}</td>
-                <td>${formatPrice(p.price, p.country)}</td>
-                <td>${p.quantity}</td>
-                <td>${p.category}</td>
-                <td>${p.country}</td>
-            `;
-            tbody.appendChild(row);
-        });
-    } catch (error) {
-        document.getElementById('searchResults').querySelector('tbody').innerHTML = `<tr><td colspan="6">Error: ${error.message}</td></tr>`;
-    }
-}
-
-// Update Inventory Table
-async function updateInventoryTable() {
-    try {
-        const totalResponse = await fetch('/api/admin/total-value', {headers});
-        const { total } = await totalResponse.json();
-        document.getElementById('totalValue').textContent = total.toFixed(2);
-
-        const tbody = document.getElementById('inventoryTable').querySelector('tbody');
-        tbody.innerHTML = '';
-        const start = (inventoryPage - 1) * ITEMS_PER_PAGE;
-        const end = start + ITEMS_PER_PAGE;
-        const paginatedData = inventoryData.slice(start, end);
-
-        paginatedData.forEach(p => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${p.id}</td>
-                <td>${p.name}</td>
-                <td>${formatPrice(p.price, p.country)}</td>
-                <td>${p.quantity}</td>
-                <td>${p.category}</td>
-                <td>${p.country}</td>
-                <td>${formatPrice(p.price * p.quantity, p.country)}</td>
-                <td><button class="edit-btn" onclick="fillEditForm('${p.id}', '${p.name}', ${p.price}, ${p.quantity}, '${p.category}', '${p.country}')">Edit</button></td>
-            `;
-            tbody.appendChild(row);
-        });
-
-        document.getElementById('inventoryPage').textContent = inventoryPage;
-    } catch (error) {
-        document.getElementById('inventoryTable').querySelector('tbody').innerHTML = `<tr><td colspan="8">Error: ${error.message}</td></tr>`;
-    }
-}
-
-// Fill Edit Form
-function fillEditForm(id, name, price, quantity, category, country) {
-    document.getElementById('editId').value = id;
-    document.getElementById('editName').value = name;
-    document.getElementById('editPrice').value = price;
-    document.getElementById('editQuantity').value = quantity;
-    document.getElementById('editCategory').value = category;
-    document.getElementById('editCountry').value = country; // Sets the selected option
-}
-
-// Update Transaction Table
-async function updateTransactionTable() {
-    try {
-        const response = await fetch('/api/admin/transactions', { headers });
-        transactionsData = await response.json();
-        const tbody = document.getElementById('transactionTable').querySelector('tbody');
-        tbody.innerHTML = '';
-        const start = (transactionsPage - 1) * ITEMS_PER_PAGE;
-        const end = start + ITEMS_PER_PAGE;
-        const paginatedData = transactionsData.slice(start, end);
-
-        paginatedData.forEach(t => {
-            const row = document.createElement('tr');
-            const product = inventoryData.find(p => p.id === t.product_id);
-            const value = product ? formatPrice(t.value, product.country) : t.value;
-            row.innerHTML = `
-                <td>${new Date(t.timestamp).toLocaleString()}</td>
-                <td>${t.type}</td>
-                <td>${t.product_id}</td>
-                <td>${t.quantity}</td>
-                <td>${value}</td>
-            `;
-            tbody.appendChild(row);
-        });
-
-        document.getElementById('transactionsPage').textContent = transactionsPage;
-    } catch (error) {
-        document.getElementById('transactionTable').querySelector('tbody').innerHTML = `<tr><td colspan="5">Error: ${error.message}</td></tr>`;
-    }
-}
-
-// Pagination Controls
-function prevPage(type) {
-    if (type === 'inventory' && inventoryPage > 1) {
-        inventoryPage--;
-        updateInventoryTable();
-    } else if (type === 'transactions' && transactionsPage > 1) {
-        transactionsPage--;
-        updateTransactionTable();
-    }
-}
-
-function nextPage(type) {
-    if (type === 'inventory' && inventoryPage * ITEMS_PER_PAGE < inventoryData.length) {
-        inventoryPage++;
-        updateInventoryTable();
-    } else if (type === 'transactions' && transactionsPage * ITEMS_PER_PAGE < transactionsData.length) {
-        transactionsPage++;
-        updateTransactionTable();
-    }
-}
-
-// Export to CSV
-async function exportToCSV() {
-    try {
-        const response = await fetch('/api/admin/export', {headers});
-        const csv = await response.text();
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'inventory.csv';
-        a.click();
-        window.URL.revokeObjectURL(url);
-    } catch (error) {
-        alert(`Error exporting CSV: ${error.message}`);
-    }
-}
-
-// Currency Formatting
-const currencyMap = {
-    'RSA': { code: 'RSA', symbol: 'R' },
-    'US': { code: 'USD', symbol: '$' },
-    'GB': { code: 'GBP', symbol: '£' },
-    'EU': { code: 'EUR', symbol: '€' },
-    'JP': { code: 'JPY', symbol: '¥' },
-    'CA': { code: 'CAD', symbol: 'C$' }
-};
-
-function formatPrice(price, country) {
-    const { symbol } = currencyMap[country.toUpperCase()] || { symbol: 'R' };
-    return `${symbol}${price.toFixed(2)}`;
-}
-
-// Initial load
-async function initialLoad() {
-    if (!token) window.location.href = '/';
-    updateInventoryTable();
-    updateTransactionTable();
-}
-
-initialLoad();

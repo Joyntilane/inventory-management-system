@@ -152,13 +152,36 @@ Today, I focused on front-end improvements, security, UX, and code quality.
   - // CHANGE: Added `/api/user/all-products` endpoint in `inventoryRoutes.js` and `getAllProductsForUsers` method in `inventory.js` to fetch products for users.
   - // CHANGE: Updated `style.css` to include product card styling and responsive grid for the user dashboard.
 
+## Updates: 10 March 2025
+
+### Key Changes
+- **User Review Analytics:** 
+  - Added `getReviewAnalytics` method in `inventory.js` to compute average ratings per product, rating distribution, and feedback trends by month.
+  - Added `/api/admin/analytics` endpoint in `inventoryRoutes.js` to retrieve analytics data.
+  - Updated `admin.html` and `admin.js` to display analytics in tables (product averages, rating distribution, and trends).
+
+- **Feedback Enhancements:**
+    - Added admin feedback reports and user feedback history with edit/delete functionality.
+
+- **Product Feedback:** 
+    - Added `feedback` table to store ratings and comments, with a form on the user dashboard to submit    feedback and display average ratings.
+
+- **Product Photos:** 
+    - Implemented photo uploads for admins, displayed on the user dashboard.
+
+- **Product Descriptions:** 
+    - Added `short_description` column to the `products` table and updated backend to store and retrieve descriptions.
+
+- **UI Enhancements:** Enhanced the look and feel on both the admins and users endpoints.
+
+### Setup Notes
+- Install dependencies: `npm install`.
+- Ensure `.env` file exists with `SECRET_KEY=your-secure-secret-key`.
+- Run the server: `npm run dev`.
+
 ## Testing
 - Run `npm run dev`.
-
+- Access at `http://localhost:3000`.
 - Log in as a user.
-
 - Navigate to `user.html` and verify:
-
-    >Products are fetched and displayed in the .products-grid.
-
 - Add products via `admin.html` and confirm they appear on the user dashboard.

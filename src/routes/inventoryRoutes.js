@@ -1,27 +1,25 @@
 const express = require('express');
 const router = express.Router();
 
-module.exports = (db) => {
+module.exports = (db, upload) => {
     router.inventory = null;
 
-    // CHANGE: New endpoint for users to fetch all products
     router.get('/all-products', async (req, res) => {
+        console.log('Received request for /api/user/all-products');
         try {
+            if (!router.inventory) {
+                throw new Error('Inventory model not initialized');
+            }
             const products = await router.inventory.getAllProductsForUsers();
-            // Add short descriptions (simulated here; in reality, add to products table)
-            const productsWithDescriptions = products.map(p => ({
-                ...p,
-                shortDescription: `A ${p.category} product from ${p.country} - ${p.name} is ideal for inventory tracking.`
-            }));
-            res.json(productsWithDescriptions);
+            res.json(products);
         } catch (error) {
+            console.error('Error in /all-products:', error.message);
             res.status(500).json({ error: error.message });
         }
     });
 
     router.get('/products', async (req, res) => {
         try {
-            // CHANGE: Filter products by req.user.companyId
             const products = await router.inventory.getProductsForCompany(req.user.companyId);
             res.json(products);
         } catch (error) {
@@ -29,98 +27,82 @@ module.exports = (db) => {
         }
     });
 
-    router.post('/products', async (req, res) => {
+    router.post('/products', upload.single('photo'), async (req, res) => {
         try {
-            const { id, name, price, quantity, category, country } = req.body;
-            // CHANGE: Pass req.user.companyId to addProduct
-            await router.inventory.addProduct(id, name, price, quantity, category, country, req.user.companyId);
-            res.status(201).json({ message: 'Product added successfully' });
+            const { name, price, quantity, category, country, shortDescription = '' } = req.body;
+            const photoPath = req.file ? `/uploads/${req.file.filename}` : '';
+            const product = await router.inventory.createProduct(name, parseFloat(price), parseInt(quantity, 10), category, country, req.user.companyId, shortDescription, photoPath);
+            res.status(201).json(product);
         } catch (error) {
+            console.error('Error creating product:', error.message);
             res.status(400).json({ error: error.message });
         }
     });
 
-    router.put('/products/:id', async (req, res) => {
+    router.post('/feedback', async (req, res) => {
         try {
-            const { name, price, quantity, category, country } = req.body;
-            // CHANGE: Pass req.user.companyId to editProduct
-            await router.inventory.editProduct(req.params.id, name, price, quantity, category, country, req.user.companyId);
-            res.json({ message: 'Product updated successfully' });
+            const { productId, rating, comment = '' } = req.body;
+            const userId = req.user.id;
+            if (!productId || !rating) throw new Error('Product ID and rating are required');
+            const feedback = await router.inventory.createFeedback(productId, userId, parseInt(rating, 10), comment);
+            res.status(201).json(feedback);
         } catch (error) {
+            console.error('Error creating feedback:', error.message);
             res.status(400).json({ error: error.message });
         }
     });
 
-    router.delete('/products/:id', async (req, res) => {
+    router.get('/admin/feedback', async (req, res) => {
         try {
-            // CHANGE: Pass req.user.companyId to removeProduct
-            await router.inventory.removeProduct(req.params.id, req.user.companyId);
-            res.json({ message: 'Product removed successfully' });
+            const feedback = await router.inventory.getFeedbackForCompany(req.user.companyId);
+            res.json(feedback);
         } catch (error) {
-            res.status(400).json({ error: error.message });
-        }
-    });
-
-    router.put('/products/:id/quantity', async (req, res) => {
-        try {
-            const { quantityChange } = req.body;
-            // CHANGE: Pass req.user.companyId to updateQuantity
-            await router.inventory.updateQuantity(req.params.id, quantityChange, req.user.companyId);
-            res.json({ message: 'Quantity updated successfully' });
-        } catch (error) {
-            res.status(400).json({ error: error.message });
-        }
-    });
-
-    router.get('/products/search', async (req, res) => {
-        try {
-            const { query } = req.query;
-            // CHANGE: Pass req.user.companyId to searchProducts
-            const results = await router.inventory.searchProducts(query, req.user.companyId);
-            res.json(results);
-        } catch (error) {
+            console.error('Error fetching feedback:', error.message);
             res.status(500).json({ error: error.message });
         }
     });
 
-    router.get('/products/category/:category', async (req, res) => {
+    router.get('/feedback/history', async (req, res) => {
         try {
-            // CHANGE: Pass req.user.companyId to getProductsByCategory
-            const results = await router.inventory.getProductsByCategory(req.params.category, req.user.companyId);
-            res.json(results);
+            const feedback = await router.inventory.getFeedbackByUser(req.user.id);
+            res.json(feedback);
         } catch (error) {
+            console.error('Error fetching feedback history:', error.message);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    router.put('/feedback/:id', async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { rating, comment } = req.body;
+            const userId = req.user.id;
+            const feedback = await router.inventory.updateFeedback(id, userId, parseInt(rating, 10), comment);
+            res.json(feedback);
+        } catch (error) {
+            console.error('Error updating feedback:', error.message);
             res.status(400).json({ error: error.message });
         }
     });
 
-    router.get('/total-value', async (req, res) => {
+    router.delete('/feedback/:id', async (req, res) => {
         try {
-            // CHANGE: Pass req.user.companyId to getTotalValue
-            const total = await router.inventory.getTotalValue(req.user.companyId);
-            res.json({ total });
+            const { id } = req.params;
+            const userId = req.user.id;
+            await router.inventory.deleteFeedback(id, userId);
+            res.status(204).send();
         } catch (error) {
-            res.status(500).json({ error: error.message });
+            console.error('Error deleting feedback:', error.message);
+            res.status(400).json({ error: error.message });
         }
     });
 
-    router.get('/export', async (req, res) => {
+    router.get('/admin/analytics', async (req, res) => {
         try {
-            // CHANGE: Pass req.user.companyId to exportToCSV
-            const csv = await router.inventory.exportToCSV(req.user.companyId);
-            res.header('Content-Type', 'text/csv');
-            res.attachment('inventory.csv');
-            res.send(csv);
+            const analytics = await router.inventory.getReviewAnalytics(req.user.companyId);
+            res.json(analytics);
         } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    });
-
-    router.get('/transactions', async (req, res) => {
-        try {
-            // CHANGE: Pass req.user.companyId to getTransactionsForCompany
-            const transactions = await router.inventory.getTransactionsForCompany(req.user.companyId);
-            res.json(transactions);
-        } catch (error) {
+            console.error('Error fetching analytics:', error.message);
             res.status(500).json({ error: error.message });
         }
     });

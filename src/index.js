@@ -7,19 +7,55 @@ const Schema = require('./database/schema');
 const inventoryRoutes = require('./routes/inventoryRoutes');
 const User = require('./models/user');
 const jwt = require('jsonwebtoken');
-// CHANGE: Added rate limiting dependency
 const rateLimit = require('express-rate-limit');
+const cors = require('cors');
+const multer = require('multer');
+const fs = require('fs');
 
-const SECRET_KEY = process.env.SECRET_KEY || 'fallback-secret-key'; // fallback key
+const SECRET_KEY = process.env.SECRET_KEY || 'fallback-secret-key';
 
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
+app.use(cors({
+    origin: 'http://localhost:3000',
+    credentials: true
+}));
 
-// CHANGE: Rate limiting for /api/login (5 attempts per 15 minutes)
+// Configure multer for file uploads
+const uploadDir = path.join(__dirname, '../public/uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+    }
+});
+const upload = multer({
+    storage,
+    fileFilter: (req, file, cb) => {
+        const fileTypes = /jpeg|jpg|png/;
+        const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
+        const mimetype = fileTypes.test(file.mimetype);
+        if (extname && mimetype) {
+            return cb(null, true);
+        }
+        cb(new Error('Only .jpg, .jpeg, and .png files are allowed!'));
+    },
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
+
+// Serve uploaded files
+app.use('/uploads', express.static(uploadDir));
+
 const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // 5 attempts
+    windowMs: 15 * 60 * 1000,
+    max: 5,
     message: 'Too many login attempts, please try again after 15 minutes'
 });
 
@@ -31,7 +67,6 @@ async function startServer() {
 
         const userModel = new User(db);
 
-        // CHANGE: Applied loginLimiter to /api/login
         app.post('/api/login', loginLimiter, async (req, res) => {
             try {
                 const { username, password } = req.body;
@@ -68,7 +103,18 @@ async function startServer() {
             }
         };
 
-        const inventoryRouter = inventoryRoutes(db);
+        const InventoryManagement = require('./models/inventory');
+        const broadcastUpdate = (type, data) => {
+            wss.clients.forEach(client => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify({ type, data }));
+                }
+            });
+        };
+        const inventory = new InventoryManagement(db, broadcastUpdate);
+        const inventoryRouter = inventoryRoutes(db, upload);
+        inventoryRouter.inventory = inventory;
+
         app.use('/api/admin', authenticateJWT, (req, res, next) => {
             if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
             next();
@@ -84,6 +130,12 @@ async function startServer() {
         const server = app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
             console.log(`Frontend available at http://localhost:${PORT}`);
+            console.log('Registered routes:');
+            app._router.stack.forEach((r) => {
+                if (r.route && r.route.path) {
+                    console.log(`${Object.keys(r.route.methods)} ${r.route.path}`);
+                }
+            });
         });
 
         const wss = new WebSocket.Server({ server });
@@ -91,18 +143,6 @@ async function startServer() {
             console.log('WebSocket client connected');
             ws.on('close', () => console.log('WebSocket client disconnected'));
         });
-
-        function broadcastUpdate(type, data) {
-            wss.clients.forEach(client => {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(JSON.stringify({ type, data }));
-                }
-            });
-        }
-
-        const InventoryManagement = require('./models/inventory');
-        const inventory = new InventoryManagement(db, broadcastUpdate);
-        inventoryRouter.inventory = inventory;
 
     } catch (error) {
         console.error(`Error: ${error.message}`);

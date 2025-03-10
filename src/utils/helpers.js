@@ -1,80 +1,46 @@
-// Country to currency mapping (simplified, ISO 3166-1 alpha-2 codes)
-const currencyMap = {
-    'RSA': { code: 'RSA', symbol: 'R' },
-    'US': { code: 'USD', symbol: '$' },
-    'GB': { code: 'GBP', symbol: '£' },
-    'EU': { code: 'EUR', symbol: '€' },
-    'JP': { code: 'JPY', symbol: '¥' },
-    'CA': { code: 'CAD', symbol: 'C$' },
-};
-
 function validateId(id) {
-    if (typeof id !== 'string' || !id.match(/^[A-Za-z0-9]+$/)) {
-        throw new Error('ID must be a non-empty alphanumeric string');
-    }
-    return id;
+    if (!Number.isInteger(id) || id <= 0) throw new Error('Invalid ID');
 }
 
 function validateName(name) {
-    if (typeof name !== 'string' || name.trim().length === 0 || name.length > 50) {
-        throw new Error('Name must be a non-empty string (max 50 characters)');
-    }
-    return name.trim();
+    if (typeof name !== 'string' || name.trim().length < 2) throw new Error('Name must be at least 2 characters');
 }
 
 function validatePrice(price) {
-    const num = Number(price);
-    if (isNaN(num) || num < 0 || num > 1000000) {
-        throw new Error('Price must be a number between 0 and 1,000,000');
-    }
-    return Number(num.toFixed(2));
+    if (typeof price !== 'number' || price <= 0) throw new Error('Price must be a positive number');
 }
 
 function validateQuantity(quantity) {
-    const num = Number(quantity);
-    if (isNaN(num) || !Number.isInteger(num) || num < 0 || num > 1000000) {
-        throw new Error('Quantity must be an integer between 0 and 1,000,000');
-    }
-    return num;
+    if (!Number.isInteger(quantity) || quantity < 0) throw new Error('Quantity must be a non-negative integer');
 }
 
 function validateCategory(category) {
-    if (typeof category !== 'string' || category.trim().length === 0 || category.length > 30) {
-        throw new Error('Category must be a non-empty string (max 30 characters)');
-    }
-    return category.trim().toLowerCase();
+    if (typeof category !== 'string' || category.trim().length < 2) throw new Error('Category must be at least 2 characters');
 }
 
 function validateCountry(country) {
-    if (typeof country !== 'string' || !currencyMap[country.toUpperCase()]) {
-        throw new Error('Invalid or unsupported country code');
-    }
-    return country.toUpperCase();
+    const validCountries = ['RSA', 'US', 'GB', 'EU', 'JP', 'CA'];
+    if (!validCountries.includes(country)) throw new Error('Invalid country');
 }
 
 function validateQuantityChange(quantityChange) {
-    const num = Number(quantityChange);
-    if (isNaN(num) || !Number.isInteger(num) || Math.abs(num) > 1000000) {
-        throw new Error('Quantity change must be an integer between -1,000,000 and 1,000,000');
-    }
-    return num;
-}
-
-function padString(str, length) {
-    return str.padEnd(length);
-}
-
-function getCurrency(country) {
-    return currencyMap[country.toUpperCase()] || { code: 'USD', symbol: '$' }; // Default to USD
+    if (!Number.isInteger(quantityChange) || quantityChange <= 0) throw new Error('Quantity change must be a positive integer');
 }
 
 function formatPrice(price, country) {
-    const { symbol } = getCurrency(country);
+    const currencyMap = {
+        'RSA': { code: 'ZAR', symbol: 'R' },
+        'US': { code: 'USD', symbol: '$' },
+        'GB': { code: 'GBP', symbol: '£' },
+        'EU': { code: 'EUR', symbol: '€' },
+        'JP': { code: 'JPY', symbol: '¥' },
+        'CA': { code: 'CAD', symbol: 'C$' }
+    };
+    const { symbol } = currencyMap[country.toUpperCase()] || { symbol: 'R' };
     return `${symbol}${price.toFixed(2)}`;
 }
 
 module.exports = {
-    padString,
     validateId,
     validateName,
     validatePrice,
@@ -82,6 +48,5 @@ module.exports = {
     validateCategory,
     validateCountry,
     validateQuantityChange,
-    getCurrency,
     formatPrice
 };
